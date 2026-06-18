@@ -1,0 +1,83 @@
+name: Build Index
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate index.html
+        run: |
+          FILES=$(ls [0-9]*.html 2>/dev/null | sort -r)
+          cat > index.html << 'HTML'
+          <!DOCTYPE html>
+          <html lang="ja">
+          <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>スバル通信</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap');
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body {
+              background: #FEF6F0;
+              font-family: 'Zen Maru Gothic', sans-serif;
+              min-height: 100vh;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              padding: 32px 20px;
+            }
+            h1 { font-size: 28px; color: #C0392B; margin-bottom: 8px; }
+            .sub { font-size: 13px; color: #B07060; margin-bottom: 32px; }
+            .list { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 12px; }
+            .item a {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              background: #fff;
+              border-radius: 16px;
+              padding: 16px 20px;
+              text-decoration: none;
+              color: #3D2B1F;
+              box-shadow: 0 3px 10px rgba(0,0,0,.07);
+              font-size: 16px;
+              font-weight: 700;
+              transition: background .15s;
+            }
+            .item a:hover { background: #FFF0E8; }
+            .item .arrow { color: #E07040; font-size: 18px; }
+          </style>
+          </head>
+          <body>
+          <h1>🐕 スバル通信</h1>
+          <p class="sub">毎日のスバルの様子をお届けするよ🐾</p>
+          <div class="list">
+          HTML
+
+          for f in $FILES; do
+            date="${f%.html}"
+            y="20${date:0:2}"
+            m="${date:2:2}"
+            d="${date:4:2}"
+            label="${y}年${m}月${d}日"
+            echo "    <div class=\"item\"><a href=\"${f}\"><span>📅 ${label}</span><span class=\"arrow\">→</span></a></div>" >> index.html
+          done
+
+          cat >> index.html << 'HTML'
+          </div>
+          </body>
+          </html>
+          HTML
+
+      - name: Commit index.html
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Update index.html"
+          git push
